@@ -11,6 +11,7 @@ import { Mail, LogIn, LogOut, Network, List } from 'lucide-react';
 export default function Home() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [activeSchool, setActiveSchool] = useState('All');
+  const [activeDifficulty, setActiveDifficulty] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Subscription state
@@ -112,7 +113,13 @@ export default function Home() {
         node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (node.tldr && node.tldr.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      return isSchoolMatch && isSearchMatch;
+      let isDifficultyMatch = true;
+      if (activeDifficulty !== 'All' && node.group === 1) { // Only filter Paper nodes
+        const levelFloor = Math.floor((node.difficulty || 300) / 100) * 100;
+        isDifficultyMatch = levelFloor === Number(activeDifficulty);
+      }
+
+      return isSchoolMatch && isSearchMatch && isDifficultyMatch;
     });
 
     // Create a Set of valid node IDs for fast lookup
@@ -126,7 +133,7 @@ export default function Home() {
     });
 
     return { nodes: validNodes, links: validLinks };
-  }, [graphData, activeSchool, searchQuery]);
+  }, [graphData, activeSchool, searchQuery, activeDifficulty]);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,7 +154,8 @@ export default function Home() {
         setTimeout(() => setSubStatus('idle'), 3000);
       } else {
         setSubStatus('error');
-        setSubMessage(data.error || 'Failed to subscribe');
+        // If data.error is an object (like a Supabase error), extract its message, otherwise use it if it's a string.
+        setSubMessage(data.error?.message || (typeof data.error === 'string' ? data.error : 'Failed to subscribe'));
         setTimeout(() => setSubStatus('idle'), 3000);
       }
     } catch (err) {
@@ -257,7 +265,12 @@ export default function Home() {
 
         {/* Controls Section */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
-          <PhilosophyFilter schools={schools as string[]} onFilter={handleFilter} />
+          <PhilosophyFilter
+            schools={schools as string[]}
+            activeDifficulty={activeDifficulty}
+            onFilter={handleFilter}
+            onDifficultyChange={setActiveDifficulty}
+          />
 
           <button
             onClick={() => setViewMode(prev => prev === 'graph' ? 'table' : 'graph')}

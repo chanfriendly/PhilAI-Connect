@@ -86,6 +86,15 @@ export default function GraphCanvas({
                         ctx.fill();
                     }
 
+                    // Entry Point Highlight (Level 100 Papers)
+                    const isEntryPoint = node.group === 1 && (node.difficulty || 300) < 200;
+                    if (isEntryPoint && !isCompleted) { // Don't override Gold completion glow
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, 8 + 4, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = 'rgba(16, 185, 129, 0.3)'; // Emerald glow
+                        ctx.fill();
+                    }
+
                     // Node circle
                     ctx.beginPath();
                     const radius = node.group === 2 ? 14 : 8; // Schools are larger
@@ -133,6 +142,16 @@ export default function GraphCanvas({
                             ✕
                         </button>
                     </div>
+                    {selectedNode.group === 1 && (
+                        <div className="mb-2">
+                            <span className={`text-xs font-bold px-2 py-1 rounded-md ${(selectedNode.difficulty || 300) < 200
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                }`}>
+                                Level {selectedNode.difficulty || 300} {(selectedNode.difficulty || 300) < 200 && ' (Recommended Entry Point)'}
+                            </span>
+                        </div>
+                    )}
                     <h3 className="text-xl font-bold text-white mb-2 leading-tight">
                         {selectedNode.name}
                     </h3>

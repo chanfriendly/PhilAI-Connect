@@ -9,7 +9,7 @@ export async function GET() {
             OPTIONAL MATCH (a)-[r_cat:CATEGORIZED_AS]->(s:School)
             OPTIONAL MATCH (a)-[r_cite:CITES]->(cited:Article)
             RETURN 
-                a.id AS paperId, a.title AS title, a.tldr AS tldr, 
+                a.id AS paperId, a.title AS title, a.tldr AS tldr, a.difficulty AS difficulty,
                 s.name AS school,
                 cited.id AS citedPaperId, cited.title AS citedTitle
         `);
@@ -34,6 +34,7 @@ export async function GET() {
             const paperId = record.get('paperId');
             const title = record.get('title');
             const tldr = record.get('tldr');
+            const difficulty = record.get('difficulty');
 
             const school = record.get('school');
             const citedPaperId = record.get('citedPaperId');
@@ -46,7 +47,8 @@ export async function GET() {
                     name: title,
                     val: 1,
                     group: 1, // 1 = Paper
-                    tldr: tldr
+                    tldr: tldr,
+                    difficulty: difficulty || 300 // default if missing
                 });
             }
 

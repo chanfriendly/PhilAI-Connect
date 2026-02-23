@@ -51,10 +51,12 @@ async function main() {
         'all:"artificial intelligence" AND all:"philosophy of mind"',
         'all:"artificial intelligence" AND all:"epistemology"',
         'all:"artificial intelligence" AND all:"ethics"',
-        'all:"artificial intelligence" AND all:"ontology"'
+        'all:"artificial intelligence" AND all:"ontology"',
+        'all:"introduction" AND all:"philosophy of artificial intelligence"',
+        'all:"beginner" AND all:"philosophy of mind"'
     ];
 
-    const limitPerQuery = 3; // Keep overall count manageable for testing
+    const limitPerQuery = 10; // Increased to find more entry points
 
     for (const query of queries) {
         console.log(`\n======================================================`);
@@ -146,7 +148,8 @@ async function main() {
                     published_date: new Date(paper.published).toISOString().split('T')[0],
                     url: paper.link,
                     philosophical_tldr: aiAnalysis.tldr,
-                    philosophical_schools: aiAnalysis.schools
+                    philosophical_schools: aiAnalysis.schools,
+                    difficulty_level: aiAnalysis.difficulty || 300
                 }])
                 .select('id')
                 .single();
@@ -178,13 +181,15 @@ async function main() {
        SET a.title = $title, 
            a.url = $url, 
            a.source = $source,
-           a.tldr = $tldr`,
+           a.tldr = $tldr,
+           a.difficulty = $difficulty`,
                 {
                     id: paper.id,
                     title: paper.title,
                     url: paper.link,
                     source: paper.sourceType,
-                    tldr: aiAnalysis.tldr
+                    tldr: aiAnalysis.tldr,
+                    difficulty: aiAnalysis.difficulty || 300
                 }
             );
 
@@ -243,7 +248,7 @@ async function main() {
     } // End query loop
 
     console.log(`\n🎉 Test extraction run complete!`);
-    await driver.close();
+    if (driver) await driver.close();
     process.exit(0);
 }
 

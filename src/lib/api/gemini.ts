@@ -18,7 +18,7 @@ export const processPaperWithGemini = async (req: CategorizationRequest) => {
     // Use the fast, cost-effective gemini-2.5-flash model
     const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
-        systemInstruction: "You are an expert AI philosopher. Provide structured analysis in valid JSON format. Provide exactly two keys: 'tldr' (a 3-sentence philosophical summary) and 'schools' (an array of strings representing relevant philosophical schools like 'Functionalism', 'Virtue Ethics')."
+        systemInstruction: "You are an expert AI philosopher. Provide structured analysis in valid JSON format. Provide exactly three keys: 'tldr' (a 3-sentence philosophical summary), 'schools' (an array of strings representing relevant philosophical schools like 'Functionalism', 'Virtue Ethics'), and 'difficulty' (an integer representing the cognitive entry barrier from 100 for beginner/introductory up to 500 for expert graduate level theory)."
     });
 
     const prompt = `Title: ${req.title}\nAbstract: ${req.abstract}`;

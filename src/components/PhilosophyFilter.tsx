@@ -7,10 +7,12 @@ import { Search, Filter, BookOpen } from 'lucide-react';
 
 interface PhilosophyFilterProps {
     schools: string[];
+    activeDifficulty: string;
     onFilter: (school: string, query: string) => void;
+    onDifficultyChange: (difficulty: string) => void;
 }
 
-export default function PhilosophyFilter({ schools, onFilter }: PhilosophyFilterProps) {
+export default function PhilosophyFilter({ schools, activeDifficulty, onFilter, onDifficultyChange }: PhilosophyFilterProps) {
     const [activeSchool, setActiveSchool] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -61,6 +63,30 @@ export default function PhilosophyFilter({ schools, onFilter }: PhilosophyFilter
                     </div>
                 </div>
 
+            </div>
+
+            {/* Difficulty Filter */}
+            <div className="mt-6 pt-6 border-t border-slate-800/50 flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex items-center text-slate-400 text-sm font-medium shrink-0">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Cognitive Difficulty:
+                </div>
+                <div className="flex-1 w-full overflow-x-auto hide-scrollbar">
+                    <div className="flex space-x-2">
+                        {['All', '100', '200', '300', '400', '500'].map(level => (
+                            <button
+                                key={level}
+                                onClick={() => onDifficultyChange(level)}
+                                className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeDifficulty === level
+                                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700/50'
+                                    }`}
+                            >
+                                {level === 'All' ? 'All Levels' : `Level ${level}`}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

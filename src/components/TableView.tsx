@@ -36,8 +36,8 @@ export default function TableView({
                             <div
                                 key={paper.id}
                                 className={`p-5 rounded-xl border transition-all ${isCompleted
-                                        ? 'bg-amber-500/5 border-amber-500/20'
-                                        : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                                    ? 'bg-amber-500/5 border-amber-500/20'
+                                    : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
                                     }`}
                             >
                                 <div className="flex items-start gap-4">
@@ -55,9 +55,19 @@ export default function TableView({
 
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start gap-4">
-                                            <h3 className={`text-lg font-bold leading-tight ${isCompleted ? 'text-amber-100' : 'text-white'}`}>
-                                                {paper.name}
-                                            </h3>
+                                            <div className="flex flex-col gap-1">
+                                                <h3 className={`text-lg font-bold leading-tight ${isCompleted ? 'text-amber-100' : 'text-white'}`}>
+                                                    {paper.name}
+                                                </h3>
+                                                <div className="mt-1">
+                                                    <span className={`inline-flex items-center text-xs font-bold px-2 py-1 rounded-md ${(paper.difficulty || 300) < 200
+                                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                            : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
+                                                        }`}>
+                                                        Level {paper.difficulty || 300} {(paper.difficulty || 300) < 200 && ' (Entry Point)'}
+                                                    </span>
+                                                </div>
+                                            </div>
                                             {paper.id.startsWith('http') && (
                                                 <a
                                                     href={paper.id}

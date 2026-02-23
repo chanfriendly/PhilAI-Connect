@@ -19,7 +19,7 @@ async function main() {
     }
 
     console.log('Done.');
-    await driver.close();
+    if (driver) await driver.close();
     process.exit(0);
 }
 
