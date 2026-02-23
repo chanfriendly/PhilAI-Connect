@@ -27,8 +27,8 @@ graph TD
 
     subgraph "Vercel Cloud (Frontend & APIs)"
         UI[Next.js App UI]
-        API_Graph[/api/graph]
-        API_Digest[/api/digest]
+        API_Graph["/api/graph"]
+        API_Digest["/api/digest"]
         
         UI <--> API_Graph
         UI <--> API_Digest
