@@ -10,6 +10,9 @@ import { Mail, LogIn, LogOut, Network, List } from 'lucide-react';
 
 export default function Home() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+
+  // Filter state — all managed here so the filter component is fully controlled
+  // (no hidden internal state that can get out of sync with the rest of the app)
   const [activeSchool, setActiveSchool] = useState('All');
   const [activeDifficulty, setActiveDifficulty] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,13 +51,11 @@ export default function Home() {
       }
     };
 
-    // Get current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
       if (session?.user) fetchProgress(session.user.id);
     });
 
-    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
       if (session?.user) {
@@ -67,18 +68,10 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Extract the top 5 most common schools dynamically from the graph data
-  const schoolCounts = graphData.nodes
-    .filter((n: any) => n.group === 2)
-    .reduce((acc: Record<string, number>, node: any) => {
-      acc[node.name] = (acc[node.name] || 0) + 1;
-      return acc;
-    }, {});
-
-  // For each school node, we count how many links point to it
+  // Derive the top 5 most-connected schools dynamically from graph data
+  const schoolCounts: Record<string, number> = {};
   graphData.links.forEach((l: any) => {
-    // If target is an object (d3 parsed) or a string (raw)
-    const targetId = l.target.id || l.target;
+    const targetId = l.target?.id || l.target;
     if (typeof targetId === 'string' && targetId.startsWith('school-')) {
       const schoolName = targetId.replace('school-', '');
       schoolCounts[schoolName] = (schoolCounts[schoolName] || 0) + 1;
@@ -86,27 +79,26 @@ export default function Home() {
   });
 
   const schools = Object.entries(schoolCounts)
-    .sort((a, b) => b[1] - a[1]) // Sort by frequency descending
-    .slice(0, 5) // Take top 5
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
     .map(([name]) => name);
 
-  const handleFilter = (school: string, query: string) => {
-    setActiveSchool(school);
-    setSearchQuery(query);
+  const handleClearFilters = () => {
+    setActiveSchool('All');
+    setActiveDifficulty('All');
+    setSearchQuery('');
   };
 
-  // Hard Culling: Physically remove nodes that don't match the filter
+  // Hard culling: physically remove nodes that don't match all active filters
   const filteredGraphData = useMemo(() => {
     if (!graphData.nodes.length) return { nodes: [], links: [] };
 
-    // 1. Identify valid nodes
     const validNodes = graphData.nodes.filter((node: any) => {
-      // Filtration logic
       const isSchoolMatch = activeSchool === 'All' ||
         node.name === activeSchool ||
         graphData.links.some((l: any) =>
-          (l.source.id === node.id && l.target.name === activeSchool) ||
-          (l.source === node.id && l.target === `school-${activeSchool}`)
+          (l.source?.id === node.id || l.source === node.id) &&
+          (l.target?.id === `school-${activeSchool}` || l.target === `school-${activeSchool}`)
         );
 
       const isSearchMatch = searchQuery === '' ||
@@ -114,7 +106,7 @@ export default function Home() {
         (node.tldr && node.tldr.toLowerCase().includes(searchQuery.toLowerCase()));
 
       let isDifficultyMatch = true;
-      if (activeDifficulty !== 'All' && node.group === 1) { // Only filter Paper nodes
+      if (activeDifficulty !== 'All' && node.group === 1) {
         const levelFloor = Math.floor((node.difficulty || 300) / 100) * 100;
         isDifficultyMatch = levelFloor === Number(activeDifficulty);
       }
@@ -122,13 +114,11 @@ export default function Home() {
       return isSchoolMatch && isSearchMatch && isDifficultyMatch;
     });
 
-    // Create a Set of valid node IDs for fast lookup
     const validNodeIds = new Set(validNodes.map((n: any) => n.id));
 
-    // 2. Filter links (keep only links where BOTH source and target are still in the graph)
     const validLinks = graphData.links.filter((l: any) => {
-      const sourceId = l.source.id || l.source;
-      const targetId = l.target.id || l.target;
+      const sourceId = l.source?.id || l.source;
+      const targetId = l.target?.id || l.target;
       return validNodeIds.has(sourceId) && validNodeIds.has(targetId);
     });
 
@@ -149,12 +139,11 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setSubStatus('success');
-        setSubMessage('Subscribed successfully!');
+        setSubMessage('Subscribed! You\'ll receive new papers and discussions weekly.');
         setEmail('');
-        setTimeout(() => setSubStatus('idle'), 3000);
+        setTimeout(() => setSubStatus('idle'), 4000);
       } else {
         setSubStatus('error');
-        // If data.error is an object (like a Supabase error), extract its message, otherwise use it if it's a string.
         setSubMessage(data.error?.message || (typeof data.error === 'string' ? data.error : 'Failed to subscribe'));
         setTimeout(() => setSubStatus('idle'), 3000);
       }
@@ -228,7 +217,8 @@ export default function Home() {
               Explore the argument lineage, discover philosophical schools, and trace the evolution of thought.
             </p>
 
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
+            {/* Email Signup */}
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
               <form onSubmit={handleSubscribe} className="flex w-full gap-x-3">
                 <input
                   type="email"
@@ -248,6 +238,9 @@ export default function Home() {
                   {subStatus === 'loading' ? 'Joining...' : 'The Signal'}
                 </button>
               </form>
+              <p className="text-xs text-slate-500">
+                A weekly digest of new papers at the AI–philosophy intersection.
+              </p>
 
               {subStatus === 'success' && (
                 <p className="text-sm text-emerald-400 animate-pulse">{subMessage}</p>
@@ -266,15 +259,19 @@ export default function Home() {
         {/* Controls Section */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
           <PhilosophyFilter
-            schools={schools as string[]}
+            schools={schools}
+            activeSchool={activeSchool}
             activeDifficulty={activeDifficulty}
-            onFilter={handleFilter}
+            searchQuery={searchQuery}
+            onSchoolChange={setActiveSchool}
+            onSearchChange={setSearchQuery}
             onDifficultyChange={setActiveDifficulty}
+            onClearFilters={handleClearFilters}
           />
 
           <button
             onClick={() => setViewMode(prev => prev === 'graph' ? 'table' : 'graph')}
-            className="flex items-center rounded-xl bg-slate-900 border border-slate-700 px-4 py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors shadow-lg"
+            className="flex items-center rounded-xl bg-slate-900 border border-slate-700 px-4 py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors shadow-lg shrink-0"
           >
             {viewMode === 'graph' ? (
               <><List className="w-4 h-4 mr-2 text-indigo-400" /> Switch to List View</>
@@ -305,9 +302,9 @@ export default function Home() {
 
       </div>
 
-      {/* Footer / Admin Link */}
+      {/* Footer */}
       <footer className="mt-auto py-8 text-center text-sm text-slate-500">
-        <p>&copy; {new Date().getFullYear()} PhilAI Connect. <a href="/admin" className="hover:text-emerald-400 transition-colors">Admin Dashboard</a>.</p>
+        <p>&copy; {new Date().getFullYear()} PhilAI Connect. <a href="/admin" className="hover:text-emerald-400 transition-colors">Admin</a>.</p>
       </footer>
     </main>
   );
