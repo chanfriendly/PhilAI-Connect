@@ -43,7 +43,7 @@ const SEP_ENTRIES = [
     { slug: 'other-minds',              title: 'Other Minds' },
     { slug: 'logic-ai',                 title: 'Logic and Artificial Intelligence' },
     { slug: 'mind-identity',            title: 'The Identity Theory of Mind' },
-    { slug: 'eliminativism',            title: 'Eliminative Materialism' },
+    { slug: 'physicalism',              title: 'Physicalism' },
     { slug: 'qualia',                   title: 'Qualia' },
     { slug: 'multiple-realizability',   title: 'Multiple Realizability' },
     { slug: 'epiphenomenalism',         title: 'Epiphenomenalism' },
