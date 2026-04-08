@@ -21,6 +21,7 @@ import { searchArxivPapers } from '../src/lib/api/arxiv';
 import { searchOpenAlexPapers } from '../src/lib/api/openalex';
 import { searchCrossRef } from '../src/lib/api/crossref';
 import { searchCORE } from '../src/lib/api/core';
+import { harvestPhilArchive } from '../src/lib/api/philarchive';
 import { processPaperWithGemini } from '../src/lib/api/gemini';
 import { searchSemanticScholar, getPaperCitations } from '../src/lib/api/semanticScholar';
 import { supabase } from '../src/lib/db/supabase';
@@ -77,6 +78,28 @@ const queries = [
     // --- Metaphysics & Ontology ---
     'ontology knowledge representation artificial intelligence',
     'social ontology artificial intelligence philosophy',
+
+    // --- Key Figures: Philosopher-specific queries ---
+    // These target the primary bodies of work that define the AI-philosophy canon.
+    // Searching by author name + core concept pulls papers that broad queries miss,
+    // particularly from philosophy departments that don't publish on arXiv.
+    'Chalmers hard problem consciousness philosophical zombie',
+    'Dennett intentionality heterophenomenology consciousness explained',
+    'Searle intentionality speech acts philosophy mind',
+    'Putnam functionalism philosophy mind brain',
+    'Nagel what is it like to be consciousness subjective experience',
+    'Block access consciousness phenomenal consciousness',
+    'Bostrom superintelligence existential risk artificial general intelligence',
+    'Floridi information ethics philosophy AI',
+    'Parfit personal identity reasons persons',
+    'Chalmers Dennett consciousness debate philosophy',
+
+    // --- Emerging Areas ---
+    'generative AI large language models philosophical implications',
+    'AI sentience moral patiency philosophy',
+    'algorithmic fairness justice philosophy ethics',
+    'privacy surveillance AI philosophy',
+    'posthumanism transhumanism philosophy technology',
 ];
 
 const LIMIT_PER_QUERY_PER_SOURCE = 8;
@@ -345,6 +368,44 @@ async function main() {
             await ingestPaper(paper);
             totalProcessed++;
         }
+    }
+
+    // ---------------------------------------------------------------------------
+    // PhilArchive harvest (date-range based, not per-query)
+    //
+    // PhilArchive has no search API — it uses OAI-PMH harvesting. We pull all
+    // records from the last 90 days and let Gemini handle relevance. Papers
+    // without a usable abstract are dropped in ingestPaper() before Gemini runs.
+    //
+    // To harvest a different window, set PHILARCHIVE_FROM / PHILARCHIVE_UNTIL
+    // in your .env.local (format: YYYY-MM-DD).
+    // ---------------------------------------------------------------------------
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📚 PhilArchive harvest`);
+
+    try {
+        const philArchiveFrom = process.env.PHILARCHIVE_FROM;
+        const philArchiveUntil = process.env.PHILARCHIVE_UNTIL;
+        const philArchivePapers = await harvestPhilArchive(philArchiveFrom, philArchiveUntil);
+        console.log(`   Harvested ${philArchivePapers.length} candidates from PhilArchive\n`);
+
+        for (const paper of philArchivePapers) {
+            if (!paper.title || !paper.id) continue;
+            console.log(`📄 ${paper.title.substring(0, 80)}${paper.title.length > 80 ? '…' : ''}`);
+            console.log(`   Source: PhilArchive`);
+            await ingestPaper({
+                id: paper.id,
+                title: paper.title,
+                summary: paper.abstract,
+                authors: paper.authors,
+                published: paper.published_date,
+                link: paper.url,
+                sourceType: 'PhilArchive',
+            });
+            totalProcessed++;
+        }
+    } catch (e) {
+        console.warn(`   PhilArchive harvest error:`, e);
     }
 
     console.log(`\n${'='.repeat(60)}`);

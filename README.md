@@ -13,7 +13,7 @@ PhilAI Connect uses a hybrid cloud/local architecture, blending a Vercel-hosted 
 - **Relational Database & Auth**: Supabase (PostgreSQL) - Stores users, articles, and email subscribers
 - **Graph Database**: Neo4j (Self-hosted via Docker on TrueNAS) - Stores paper lineage and categorical edges
 - **AI Processing**: Google Gemini API (`gemini-1.5-flash`) - Generates philosophical categorizations and 3-sentence TL;DRs
-- **Data Sources**: arXiv API, Semantic Scholar Graph API
+- **Data Sources**: arXiv, OpenAlex, CrossRef, CORE, PhilArchive (OAI-PMH), Stanford Encyclopedia of Philosophy (SEP), Semantic Scholar (citation graph)
 - **Email Digest**: Resend API & React Email
 - **Networking/Proxy**: DuckDNS & Nginx Proxy Manager (Bridges Vercel Serverless to Local NAS)
 
@@ -58,7 +58,12 @@ graph TD
     API_Digest -->|SMTP| Resend
 
     Cron -->|Query| Arxiv
-    Cron -->|Query| Semantic
+    Cron -->|Query| OpenAlex
+    Cron -->|Query| CrossRef
+    Cron -->|Query| CORE
+    Cron -->|Harvest OAI-PMH| PhilArchive
+    Cron -->|Scrape HTML| SEP
+    Cron -->|Citation graph| Semantic
     Cron -->|Prompt| Gemini
     Cron -->|Insert| Supabase
 ```
